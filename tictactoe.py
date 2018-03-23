@@ -107,13 +107,13 @@ class Policy(nn.Module):
 
     def __init__(self, input_size=27, hidden_size=64, output_size=9):
         super(Policy, self).__init__()
-        self.model = torch.nn.Sequential(
-            torch.nn.Linear(input_size, hidden_size),
-            torch.nn.Linear(hidden_size, output_size),
-        )
+        self.affine1 = nn.Linear(input_size, hidden_size)
+        self.affine2 = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
-        return F.softmax(self.model(x), dim=1)
+        x = F.relu(self.affine1(x))
+        action_scores = self.affine2(x)
+        return F.softmax(action_scores, dim=1)
 
 
 def select_action(policy, state):
@@ -134,32 +134,16 @@ def compute_returns(rewards, gamma=1.0):
                       obtained at time step t
       @param gamma: the discount factor
       @returns list of floats representing the episode's returns
-          G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + ... 
-
-    >>> compute_returns([0,0,0,1], 1.0)
-    [1.0, 1.0, 1.0, 1.0]
-    >>> compute_returns([0,0,0,1], 0.9)
-    [0.7290000000000001, 0.81, 0.9, 1.0]
-    >>> compute_returns([0,-0.5,5,0.5,-10], 0.9)
-    [-2.5964999999999994, -2.8850000000000007, -2.6500000000000012, -8.5, -10.0]
+          G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + ...
     """
-    if len(rewards) == 1:
-        return flatten([float(rewards[0])])
-    else:
-        i = 0
-        G_t = 0.0
-        while i < len(rewards):
-            G_t += float(rewards[i]) * (gamma ** i)
-            i += 1
-        return flatten([G_t, compute_returns(rewards[1:], gamma)])
-
-
-def flatten(x):
-    try:
-        iter(x)
-        return [a for i in x for a in flatten(i)]
-    except TypeError:
-        return [x]
+    R=np.array(rewards)
+    steps=np.array(list(range(len(rewards))))
+    gammas=np.array([gamma]*len(rewards))
+    powers=np.power(gammas,steps)
+    G_ts=[]
+    for i in range(len(rewards)):
+        G_ts.append(np.dot(R[i:].T,powers[:-i]))
+    return G_ts
 
 
 def finish_episode(saved_rewards, saved_logprobs, gamma=1.0):
@@ -182,16 +166,16 @@ def get_reward(status):
     """Returns a numeric given an environment status."""
     return {
         Environment.STATUS_VALID_MOVE: 1,
-        Environment.STATUS_INVALID_MOVE: -1,
-        Environment.STATUS_WIN: float('Inf'),
-        Environment.STATUS_TIE: 2,
-        Environment.STATUS_LOSE: -float('Inf')
+        Environment.STATUS_INVALID_MOVE: 0,
+        Environment.STATUS_WIN: 10,
+        Environment.STATUS_TIE: 5,
+        Environment.STATUS_LOSE: -10
     }[status]
 
 
-def train(policy, env, gamma=1.0, log_interval=1000):
+def train(policy, env, gamma=1.0, log_interval=10000):
     """Train policy gradient."""
-    optimizer = optim.Adam(policy.parameters(), lr=0.001)
+    optimizer = optim.Adam(policy.parameters(), lr=0.01)
     scheduler = torch.optim.lr_scheduler.StepLR(
         optimizer, step_size=10000, gamma=0.9)
     running_reward = 0
