@@ -136,13 +136,13 @@ def compute_returns(rewards, gamma=1.0):
       @returns list of floats representing the episode's returns
           G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + ...
     """
-    R=np.array(rewards)
-    steps=np.array(list(range(len(rewards))))
-    gammas=np.array([gamma]*len(rewards))
-    powers=np.power(gammas,steps)
-    G_ts=[]
+    R = np.array(rewards)
+    steps = np.array(list(range(len(rewards))))
+    gammas = np.array([gamma] * len(rewards))
+    powers = np.power(gammas, steps)
+    G_ts = []
     for i in range(len(rewards)):
-        G_ts.append(np.dot(R[i:].T,powers[:-i]))
+        G_ts.append(np.dot(R[i:].T, powers[:len(rewards) - i]))
     return G_ts
 
 
