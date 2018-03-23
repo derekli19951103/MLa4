@@ -11,14 +11,15 @@ import torch.optim as optim
 import torch.distributions
 from torch.autograd import Variable
 
+
 class Environment(object):
     """
     The Tic-Tac-Toe Environment
     """
     # possible ways to win
-    win_set = frozenset([(0,1,2), (3,4,5), (6,7,8), # horizontal
-                         (0,3,6), (1,4,7), (2,5,8), # vertical
-                         (0,4,8), (2,4,6)])         # diagonal
+    win_set = frozenset([(0, 1, 2), (3, 4, 5), (6, 7, 8),  # horizontal
+                         (0, 3, 6), (1, 4, 7), (2, 5, 8),  # vertical
+                         (0, 4, 8), (2, 4, 6)])  # diagonal
     # statuses
     STATUS_VALID_MOVE = 'valid'
     STATUS_INVALID_MOVE = 'inv'
@@ -32,14 +33,14 @@ class Environment(object):
 
     def reset(self):
         """Reset the game to an empty board."""
-        self.grid = np.array([0] * 9) # grid
-        self.turn = 1                 # whose turn it is
-        self.done = False             # whether game is done
+        self.grid = np.array([0] * 9)  # grid
+        self.turn = 1  # whose turn it is
+        self.done = False  # whether game is done
         return self.grid
 
     def render(self):
         """Print what is on the board."""
-        map = {0:'.', 1:'x', 2:'o'} # grid label vs how to plot
+        map = {0: '.', 1: 'x', 2: 'o'}  # grid label vs how to plot
         print(''.join(map[i] for i in self.grid[0:3]))
         print(''.join(map[i] for i in self.grid[3:6]))
         print(''.join(map[i] for i in self.grid[6:9]))
@@ -98,26 +99,33 @@ class Environment(object):
                     raise ValueError("???")
         return state, status, done
 
+
 class Policy(nn.Module):
     """
     The Tic-Tac-Toe Policy
     """
+
     def __init__(self, input_size=27, hidden_size=64, output_size=9):
         super(Policy, self).__init__()
-        # TODO
+        self.model = torch.nn.Sequential(
+            torch.nn.Linear(input_size, hidden_size),
+            torch.nn.Linear(hidden_size, output_size),
+        )
 
     def forward(self, x):
-        # TODO
+        return F.softmax(self.model(x), dim=1)
+
 
 def select_action(policy, state):
     """Samples an action from the policy at the state."""
     state = torch.from_numpy(state).long().unsqueeze(0)
-    state = torch.zeros(3,9).scatter_(0,state,1).view(1,27)
+    state = torch.zeros(3, 9).scatter_(0, state, 1).view(1, 27)
     pr = policy(Variable(state))
-    m = torch.distributions.Categorical(pr) 
+    m = torch.distributions.Categorical(pr)
     action = m.sample()
     log_prob = torch.sum(m.log_prob(action))
     return action.data[0], log_prob
+
 
 def compute_returns(rewards, gamma=1.0):
     """
@@ -135,7 +143,24 @@ def compute_returns(rewards, gamma=1.0):
     >>> compute_returns([0,-0.5,5,0.5,-10], 0.9)
     [-2.5965000000000003, -2.8850000000000002, -2.6500000000000004, -8.5, -10.0]
     """
-    # TODO
+    if len(rewards) == 1:
+        return flatten([float(rewards[0])])
+    else:
+        i = 0
+        G_t = 0.0
+        while i < len(rewards):
+            G_t += float(rewards[i]) * (gamma ** i)
+            i += 1
+        return flatten([G_t, compute_returns(rewards[1:], gamma)])
+
+
+def flatten(x):
+    try:
+        iter(x)
+        return [a for i in x for a in flatten(i)]
+    except TypeError:
+        return [x]
+
 
 def finish_episode(saved_rewards, saved_logprobs, gamma=1.0):
     """Samples an action from the policy at the state."""
@@ -152,21 +177,23 @@ def finish_episode(saved_rewards, saved_logprobs, gamma=1.0):
     # note: retain_graph=True allows for multiple calls to .backward()
     # in a single step
 
+
 def get_reward(status):
     """Returns a numeric given an environment status."""
     return {
-            Environment.STATUS_VALID_MOVE  : 0, # TODO
-            Environment.STATUS_INVALID_MOVE: 0,
-            Environment.STATUS_WIN         : 0,
-            Environment.STATUS_TIE         : 0,
-            Environment.STATUS_LOSE        : 0
+        Environment.STATUS_VALID_MOVE: 1,
+        Environment.STATUS_INVALID_MOVE: -1,
+        Environment.STATUS_WIN: float('Inf'),
+        Environment.STATUS_TIE: 2,
+        Environment.STATUS_LOSE: -float('Inf')
     }[status]
+
 
 def train(policy, env, gamma=1.0, log_interval=1000):
     """Train policy gradient."""
     optimizer = optim.Adam(policy.parameters(), lr=0.001)
     scheduler = torch.optim.lr_scheduler.StepLR(
-            optimizer, step_size=10000, gamma=0.9)
+        optimizer, step_size=10000, gamma=0.9)
     running_reward = 0
 
     for i_episode in count(1):
@@ -196,7 +223,7 @@ def train(policy, env, gamma=1.0, log_interval=1000):
             torch.save(policy.state_dict(),
                        "ttt/policy-%d.pkl" % i_episode)
 
-        if i_episode % 1 == 0: # batch_size
+        if i_episode % 1 == 0:  # batch_size
             optimizer.step()
             scheduler.step()
             optimizer.zero_grad()
@@ -206,7 +233,7 @@ def first_move_distr(policy, env):
     """Display the distribution of first moves."""
     state = env.reset()
     state = torch.from_numpy(state).long().unsqueeze(0)
-    state = torch.zeros(3,9).scatter_(0,state,1).view(1,27)
+    state = torch.zeros(3, 9).scatter_(0, state, 1).view(1, 27)
     pr = policy(Variable(state))
     return pr.data
 
@@ -219,6 +246,7 @@ def load_weights(policy, episode):
 
 if __name__ == '__main__':
     import sys
+
     policy = Policy()
     env = Environment()
 
