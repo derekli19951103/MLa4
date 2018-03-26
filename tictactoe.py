@@ -168,15 +168,15 @@ def get_reward(status):
     return {
         Environment.STATUS_VALID_MOVE: 1,
         Environment.STATUS_INVALID_MOVE: -1,
-        Environment.STATUS_WIN: 8,
-        Environment.STATUS_TIE: 4,
-        Environment.STATUS_LOSE: -8
+        Environment.STATUS_WIN: 2,
+        Environment.STATUS_TIE: 0,
+        Environment.STATUS_LOSE: -2
     }[status]
 
 
 def train(policy, env, gamma=1.0, log_interval=1000):
     """Train policy gradient."""
-    optimizer = optim.Adam(policy.parameters(), lr=0.01)
+    optimizer = optim.Adam(policy.parameters(), lr=0.001)
     scheduler = torch.optim.lr_scheduler.StepLR(
         optimizer, step_size=10000, gamma=0.9)
     running_reward = 0
