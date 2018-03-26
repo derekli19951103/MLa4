@@ -135,6 +135,7 @@ def compute_returns(rewards, gamma=1.0):
       @param gamma: the discount factor
       @returns list of floats representing the episode's returns
           G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + ...
+
     """
     R = np.array(rewards)
     steps = np.array(list(range(len(rewards))))
@@ -166,14 +167,14 @@ def get_reward(status):
     """Returns a numeric given an environment status."""
     return {
         Environment.STATUS_VALID_MOVE: 1,
-        Environment.STATUS_INVALID_MOVE: 0,
-        Environment.STATUS_WIN: 10,
-        Environment.STATUS_TIE: 5,
-        Environment.STATUS_LOSE: -10
+        Environment.STATUS_INVALID_MOVE: -1,
+        Environment.STATUS_WIN: 8,
+        Environment.STATUS_TIE: 4,
+        Environment.STATUS_LOSE: -8
     }[status]
 
 
-def train(policy, env, gamma=1.0, log_interval=10000):
+def train(policy, env, gamma=1.0, log_interval=1000):
     """Train policy gradient."""
     optimizer = optim.Adam(policy.parameters(), lr=0.01)
     scheduler = torch.optim.lr_scheduler.StepLR(
@@ -191,6 +192,8 @@ def train(policy, env, gamma=1.0, log_interval=10000):
             reward = get_reward(status)
             saved_logprobs.append(logprob)
             saved_rewards.append(reward)
+            # print(saved_rewards)
+            # print("------------")
 
         R = compute_returns(saved_rewards)[0]
         running_reward += R
