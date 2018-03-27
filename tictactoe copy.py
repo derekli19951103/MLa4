@@ -213,6 +213,45 @@ def train(policy, env, gamma=1.0, log_interval=5000):
             optimizer.zero_grad()
 
 
+def self_train(policy, env, gamma=1.0, log_interval=5000):
+    """Train policy gradient."""
+    optimizer = optim.Adam(policy.parameters(), lr=0.001)
+    scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer, step_size=10000, gamma=0.9)
+    running_reward = 0
+
+    for i_episode in count(1):
+        saved_rewards = []
+        saved_logprobs = []
+        state = env.reset()
+        done = False
+        while not done:
+            action, logprob = select_action(policy, state)
+            state, status, done = self_play(env, policy, action)
+            reward = get_reward(status)
+            saved_logprobs.append(logprob)
+            saved_rewards.append(reward)
+
+        R = compute_returns(saved_rewards)[0]
+        running_reward += R
+
+        finish_episode(saved_rewards, saved_logprobs, gamma)
+
+        if i_episode % log_interval == 0:
+            print('Episode {}\tAverage return: {:.2f}'.format(
+                i_episode,
+                running_reward / log_interval))
+            print(np.argmax(first_move_distr(policy, env)))
+            running_reward = 0
+            torch.save(policy.state_dict(),
+                       "stt/policy-%d.pkl" % i_episode)
+
+        if i_episode % 1 == 0:  # batch_size
+            optimizer.step()
+            scheduler.step()
+            optimizer.zero_grad()
+
+
 def first_move_distr(policy, env):
     """Display the distribution of first moves."""
     state = env.reset()
@@ -226,6 +265,27 @@ def load_weights(policy, episode):
     """Load saved weights"""
     weights = torch.load("ttt/policy-%d.pkl" % episode)
     policy.load_state_dict(weights)
+
+
+def load_weights_from_self(policy, episode):
+    """Load saved weights"""
+    weights = torch.load("stt/policy-%d.pkl" % episode)
+    policy.load_state_dict(weights)
+
+
+def self_play(env, policy, action):
+    state, status, done = env.step(action)
+    if not done and env.turn == 2:
+        s_action, logp = select_action(policy, env.grid)
+        state, s2, done = env.step(s_action)
+        if done:
+            if s2 == env.STATUS_WIN:
+                status = env.STATUS_LOSE
+            elif s2 == env.STATUS_TIE:
+                status = env.STATUS_TIE
+            else:
+                raise ValueError("???")
+    return state, status, done
 
 
 def baby_play(env, policy):
@@ -246,9 +306,16 @@ if __name__ == '__main__':
     policy = Policy()
     env = Environment()
 
-    if len(sys.argv) == 1:
+    if sys.argv[1] == 'f':
+        # `python tictactoe.py` to train the agent
+        self_train_firsthand(policy, env)
+    if sys.argv[1] == 'r':
         # `python tictactoe.py` to train the agent
         train(policy, env)
+    if sys.argv[1] == 's':
+        # `python tictactoe.py` to train the agent
+        load_weights(policy, 150000)
+        self_train(policy, env)
     else:
         # `python tictactoe.py <ep>` to print the first move distribution
         # using weightt checkpoint at episode int(<ep>)
