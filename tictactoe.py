@@ -105,7 +105,7 @@ class Policy(nn.Module):
     The Tic-Tac-Toe Policy
     """
 
-    def __init__(self, input_size=27, hidden_size=64, output_size=9):
+    def __init__(self, input_size=27, hidden_size=400, output_size=9):
         super(Policy, self).__init__()
         self.affine1 = nn.Linear(input_size, hidden_size)
         self.affine2 = nn.Linear(hidden_size, output_size)
@@ -168,13 +168,13 @@ def get_reward(status):
     return {
         Environment.STATUS_VALID_MOVE: 1,
         Environment.STATUS_INVALID_MOVE: -1,
-        Environment.STATUS_WIN: 2,
+        Environment.STATUS_WIN: 5,
         Environment.STATUS_TIE: 0,
-        Environment.STATUS_LOSE: -2
+        Environment.STATUS_LOSE: -5
     }[status]
 
 
-def train(policy, env, gamma=1.0, log_interval=1000):
+def train(policy, env, gamma=1.0, log_interval=5000):
     """Train policy gradient."""
     optimizer = optim.Adam(policy.parameters(), lr=0.001)
     scheduler = torch.optim.lr_scheduler.StepLR(
@@ -192,8 +192,6 @@ def train(policy, env, gamma=1.0, log_interval=1000):
             reward = get_reward(status)
             saved_logprobs.append(logprob)
             saved_rewards.append(reward)
-            # print(saved_rewards)
-            # print("------------")
 
         R = compute_returns(saved_rewards)[0]
         running_reward += R
@@ -204,13 +202,12 @@ def train(policy, env, gamma=1.0, log_interval=1000):
             print('Episode {}\tAverage return: {:.2f}'.format(
                 i_episode,
                 running_reward / log_interval))
+            print(np.argmax(first_move_distr(policy, env)))
             running_reward = 0
-
-        if i_episode % (log_interval) == 0:
             torch.save(policy.state_dict(),
                        "ttt/policy-%d.pkl" % i_episode)
 
-        if i_episode % 1 == 0:  # batch_size
+        if i_episode % 128 == 0:  # batch_size
             optimizer.step()
             scheduler.step()
             optimizer.zero_grad()
@@ -231,6 +228,17 @@ def load_weights(policy, episode):
     policy.load_state_dict(weights)
 
 
+def baby_play(env, policy):
+    action, logp = select_action(policy, env.grid)
+    env.step(action)
+    env.render()
+
+
+def me_play(env, action):
+    env.step(action)
+    env.render()
+
+
 if __name__ == '__main__':
     import sys
 
@@ -246,3 +254,4 @@ if __name__ == '__main__':
         ep = int(sys.argv[1])
         load_weights(policy, ep)
         print(first_move_distr(policy, env))
+        print(np.argmax(first_move_distr(policy, env)))
