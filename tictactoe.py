@@ -105,7 +105,7 @@ class Policy(nn.Module):
     The Tic-Tac-Toe Policy
     """
 
-    def __init__(self, input_size=27, hidden_size=400, output_size=9):
+    def __init__(self, input_size=27, hidden_size=128, output_size=9):
         super(Policy, self).__init__()
         self.affine1 = nn.Linear(input_size, hidden_size)
         self.affine2 = nn.Linear(hidden_size, output_size)
@@ -168,9 +168,9 @@ def get_reward(status):
     return {
         Environment.STATUS_VALID_MOVE: 1,
         Environment.STATUS_INVALID_MOVE: -1,
-        Environment.STATUS_WIN: 5,
-        Environment.STATUS_TIE: 0,
-        Environment.STATUS_LOSE: -5
+        Environment.STATUS_WIN: 9,
+        Environment.STATUS_TIE: 2,
+        Environment.STATUS_LOSE: -9
     }[status]
 
 
@@ -207,7 +207,7 @@ def train(policy, env, gamma=1.0, log_interval=5000):
             torch.save(policy.state_dict(),
                        "ttt/policy-%d.pkl" % i_episode)
 
-        if i_episode % 128 == 0:  # batch_size
+        if i_episode % 1 == 0:  # batch_size
             optimizer.step()
             scheduler.step()
             optimizer.zero_grad()
@@ -241,7 +241,7 @@ def me_play(env, action):
 
 if __name__ == '__main__':
     import sys
-
+    random.seed(0)
     policy = Policy()
     env = Environment()
 
