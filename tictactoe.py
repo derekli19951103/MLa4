@@ -166,21 +166,21 @@ def finish_episode(saved_rewards, saved_logprobs, gamma=1.0):
 def get_reward(status):
     """Returns a numeric given an environment status."""
     return {
-        Environment.STATUS_VALID_MOVE: 1,
-        Environment.STATUS_INVALID_MOVE: -1,
-        Environment.STATUS_WIN: 9,
-        Environment.STATUS_TIE: 2,
-        Environment.STATUS_LOSE: -9
+        Environment.STATUS_VALID_MOVE: 0,
+        Environment.STATUS_INVALID_MOVE: -100,
+        Environment.STATUS_WIN: 4,
+        Environment.STATUS_TIE: 1,
+        Environment.STATUS_LOSE: -4
     }[status]
 
 
-def train(policy, env, gamma=1.0, log_interval=5000):
+def train(policy, env, gamma=1.0, log_interval=1000):
     """Train policy gradient."""
     optimizer = optim.Adam(policy.parameters(), lr=0.001)
     scheduler = torch.optim.lr_scheduler.StepLR(
         optimizer, step_size=10000, gamma=0.9)
     running_reward = 0
-
+    # inv_move = []
     for i_episode in count(1):
         saved_rewards = []
         saved_logprobs = []
@@ -189,6 +189,8 @@ def train(policy, env, gamma=1.0, log_interval=5000):
         while not done:
             action, logprob = select_action(policy, state)
             state, status, done = env.play_against_random(action)
+            if status=="inv":
+                print('no')
             reward = get_reward(status)
             saved_logprobs.append(logprob)
             saved_rewards.append(reward)
@@ -203,9 +205,13 @@ def train(policy, env, gamma=1.0, log_interval=5000):
                 i_episode,
                 running_reward / log_interval))
             print(np.argmax(first_move_distr(policy, env)))
+            win, lose, tie = rate(env, policy)
+            print('win:', win)
+            print('lose:', lose)
+            print('tie:', tie)
             running_reward = 0
             torch.save(policy.state_dict(),
-                       "ttt/policy-%d.pkl" % i_episode)
+                       "test6/policy-%d.pkl" % i_episode)
 
         if i_episode % 1 == 0:  # batch_size
             optimizer.step()
@@ -235,14 +241,34 @@ def baby_play(env, policy):
 
 
 def me_play(env, action):
-    env.step(action)
+    _,status,_=env.step(action)
+    print(status)
     env.render()
+
+
+def rate(env, policy):
+    win = 0
+    lose = 0
+    tie = 0
+    for session in range(100):
+        state = env.reset()
+        done = False
+        status = env.STATUS_VALID_MOVE
+        while not done:
+            action, logprob = select_action(policy, state)
+            state, status, done = env.play_against_random(action)
+        if status == env.STATUS_WIN:
+            win += 1
+        if status == env.STATUS_LOSE:
+            lose += 1
+        if status == env.STATUS_TIE:
+            tie += 1
+    return win, lose, tie
 
 
 if __name__ == '__main__':
     import sys
 
-    random.seed(0)
     policy = Policy()
     env = Environment()
 
