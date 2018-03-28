@@ -167,7 +167,7 @@ def get_reward(status):
     """Returns a numeric given an environment status."""
     return {
         Environment.STATUS_VALID_MOVE: 0,
-        Environment.STATUS_INVALID_MOVE: -100,
+        Environment.STATUS_INVALID_MOVE: -10,
         Environment.STATUS_WIN: 4,
         Environment.STATUS_TIE: 1,
         Environment.STATUS_LOSE: -4
@@ -189,8 +189,6 @@ def train(policy, env, gamma=1.0, log_interval=1000):
         while not done:
             action, logprob = select_action(policy, state)
             state, status, done = env.play_against_random(action)
-            if status=="inv":
-                print('no')
             reward = get_reward(status)
             saved_logprobs.append(logprob)
             saved_rewards.append(reward)

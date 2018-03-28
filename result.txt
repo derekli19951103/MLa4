@@ -1,0 +1,501 @@
+(py36) derek:MLa4 mac$ python tictactoe.py
+Episode 1000	Average return: -33.42
+3
+win: 60
+lose: 25
+tie: 15
+Episode 2000	Average return: -6.87
+8
+win: 69
+lose: 27
+tie: 4
+Episode 3000	Average return: -0.40
+8
+win: 66
+lose: 28
+tie: 6
+Episode 4000	Average return: 0.88
+4
+win: 74
+lose: 17
+tie: 9
+Episode 5000	Average return: 1.72
+4
+win: 65
+lose: 26
+tie: 9
+Episode 6000	Average return: 1.93
+4
+win: 73
+lose: 15
+tie: 12
+Episode 7000	Average return: 2.15
+4
+win: 77
+lose: 19
+tie: 4
+Episode 8000	Average return: 2.21
+4
+win: 81
+lose: 10
+tie: 9
+Episode 9000	Average return: 2.59
+4
+win: 66
+lose: 23
+tie: 11
+Episode 10000	Average return: 2.34
+4
+win: 85
+lose: 12
+tie: 3
+Episode 11000	Average return: 2.44
+4
+win: 78
+lose: 17
+tie: 5
+Episode 12000	Average return: 2.38
+4
+win: 78
+lose: 13
+tie: 9
+Episode 13000	Average return: 2.42
+4
+win: 66
+lose: 23
+tie: 11
+Episode 14000	Average return: 2.37
+6
+win: 76
+lose: 14
+tie: 10
+Episode 15000	Average return: 2.13
+6
+win: 71
+lose: 20
+tie: 9
+Episode 16000	Average return: 2.28
+6
+win: 84
+lose: 12
+tie: 4
+Episode 17000	Average return: 2.34
+4
+win: 86
+lose: 10
+tie: 4
+Episode 18000	Average return: 2.51
+6
+win: 72
+lose: 20
+tie: 8
+Episode 19000	Average return: 2.21
+6
+win: 73
+lose: 15
+tie: 12
+Episode 20000	Average return: 1.92
+8
+win: 68
+lose: 12
+tie: 20
+Episode 21000	Average return: 2.02
+6
+win: 70
+lose: 18
+tie: 12
+Episode 22000	Average return: 2.07
+6
+win: 68
+lose: 20
+tie: 12
+Episode 23000	Average return: 1.97
+8
+win: 82
+lose: 14
+tie: 4
+Episode 24000	Average return: 2.74
+4
+win: 82
+lose: 11
+tie: 7
+Episode 25000	Average return: 2.44
+4
+win: 72
+lose: 16
+tie: 12
+Episode 26000	Average return: 2.14
+4
+win: 75
+lose: 20
+tie: 5
+Episode 27000	Average return: 1.94
+4
+win: 75
+lose: 17
+tie: 8
+Episode 28000	Average return: 1.78
+4
+win: 77
+lose: 22
+tie: 1
+Episode 29000	Average return: 2.18
+4
+win: 71
+lose: 26
+tie: 3
+Episode 30000	Average return: 1.69
+4
+win: 63
+lose: 25
+tie: 12
+Episode 31000	Average return: 2.08
+4
+win: 76
+lose: 19
+tie: 5
+Episode 32000	Average return: 2.53
+4
+win: 76
+lose: 19
+tie: 5
+Episode 33000	Average return: 2.45
+4
+win: 74
+lose: 14
+tie: 12
+Episode 34000	Average return: 2.40
+7
+win: 66
+lose: 27
+tie: 7
+Episode 35000	Average return: 2.04
+4
+win: 68
+lose: 23
+tie: 9
+Episode 36000	Average return: 2.19
+4
+win: 70
+lose: 21
+tie: 9
+Episode 37000	Average return: 2.19
+4
+win: 71
+lose: 15
+tie: 14
+Episode 38000	Average return: 2.65
+4
+win: 84
+lose: 10
+tie: 6
+Episode 39000	Average return: 2.48
+4
+win: 78
+lose: 18
+tie: 4
+Episode 40000	Average return: 2.13
+4
+win: 77
+lose: 15
+tie: 8
+Episode 41000	Average return: 2.13
+4
+win: 78
+lose: 16
+tie: 6
+Episode 42000	Average return: 2.63
+4
+win: 80
+lose: 11
+tie: 9
+Episode 43000	Average return: 2.67
+4
+win: 82
+lose: 16
+tie: 2
+Episode 44000	Average return: 2.55
+4
+win: 78
+lose: 15
+tie: 7
+Episode 45000	Average return: 2.58
+4
+win: 78
+lose: 14
+tie: 8
+Episode 46000	Average return: 2.50
+4
+win: 79
+lose: 13
+tie: 8
+Episode 47000	Average return: 2.75
+4
+win: 73
+lose: 17
+tie: 10
+Episode 48000	Average return: 2.65
+4
+win: 73
+lose: 20
+tie: 7
+Episode 49000	Average return: 2.72
+4
+win: 87
+lose: 7
+tie: 6
+Episode 50000	Average return: 2.67
+4
+win: 78
+lose: 16
+tie: 6
+Episode 51000	Average return: 2.59
+4
+win: 78
+lose: 17
+tie: 5
+Episode 52000	Average return: 2.59
+4
+win: 75
+lose: 19
+tie: 6
+Episode 53000	Average return: 1.89
+3
+win: 67
+lose: 32
+tie: 1
+Episode 54000	Average return: 2.25
+4
+win: 68
+lose: 23
+tie: 9
+Episode 55000	Average return: 2.30
+4
+win: 77
+lose: 13
+tie: 10
+Episode 56000	Average return: 2.47
+4
+win: 78
+lose: 15
+tie: 7
+Episode 57000	Average return: 2.09
+4
+win: 69
+lose: 24
+tie: 7
+Episode 58000	Average return: 2.35
+4
+win: 79
+lose: 13
+tie: 8
+Episode 59000	Average return: 2.22
+4
+win: 77
+lose: 18
+tie: 5
+Episode 60000	Average return: 2.35
+4
+win: 79
+lose: 14
+tie: 7
+Episode 61000	Average return: 2.23
+4
+win: 75
+lose: 16
+tie: 9
+Episode 62000	Average return: 2.06
+4
+win: 77
+lose: 16
+tie: 7
+Episode 63000	Average return: 2.08
+4
+win: 65
+lose: 17
+tie: 18
+Episode 64000	Average return: 2.23
+4
+win: 72
+lose: 19
+tie: 9
+Episode 65000	Average return: 2.22
+4
+win: 56
+lose: 25
+tie: 19
+Episode 66000	Average return: 2.33
+4
+win: 75
+lose: 17
+tie: 8
+Episode 67000	Average return: 2.15
+4
+win: 66
+lose: 21
+tie: 13
+Episode 68000	Average return: 2.65
+4
+win: 78
+lose: 15
+tie: 7
+Episode 69000	Average return: 2.70
+4
+win: 76
+lose: 19
+tie: 5
+Episode 70000	Average return: 2.65
+4
+win: 77
+lose: 20
+tie: 3
+Episode 71000	Average return: 2.86
+4
+win: 79
+lose: 13
+tie: 8
+Episode 72000	Average return: 2.72
+4
+win: 77
+lose: 18
+tie: 5
+Episode 73000	Average return: 2.62
+4
+win: 79
+lose: 11
+tie: 10
+Episode 74000	Average return: 2.74
+4
+win: 77
+lose: 16
+tie: 7
+Episode 75000	Average return: 2.74
+4
+win: 78
+lose: 13
+tie: 9
+Episode 76000	Average return: 2.40
+8
+win: 72
+lose: 22
+tie: 6
+Episode 77000	Average return: 1.78
+8
+win: 63
+lose: 27
+tie: 10
+Episode 78000	Average return: 1.41
+8
+win: 55
+lose: 30
+tie: 15
+Episode 79000	Average return: 0.91
+8
+win: 52
+lose: 36
+tie: 12
+Episode 80000	Average return: 1.08
+8
+win: 54
+lose: 33
+tie: 13
+Episode 81000	Average return: 0.93
+8
+win: 53
+lose: 41
+tie: 6
+Episode 82000	Average return: 0.93
+8
+win: 60
+lose: 36
+tie: 4
+Episode 83000	Average return: 0.86
+8
+win: 51
+lose: 35
+tie: 14
+Episode 84000	Average return: 0.93
+8
+win: 67
+lose: 26
+tie: 7
+Episode 85000	Average return: 1.44
+8
+win: 59
+lose: 25
+tie: 16
+Episode 86000	Average return: 1.62
+4
+win: 65
+lose: 23
+tie: 12
+Episode 87000	Average return: 2.21
+4
+win: 64
+lose: 28
+tie: 8
+Episode 88000	Average return: 1.90
+4
+win: 75
+lose: 17
+tie: 8
+Episode 89000	Average return: 1.73
+4
+win: 69
+lose: 23
+tie: 8
+Episode 90000	Average return: 1.93
+4
+win: 68
+lose: 28
+tie: 4
+Episode 91000	Average return: 1.82
+4
+win: 65
+lose: 30
+tie: 5
+Episode 92000	Average return: 1.90
+4
+win: 70
+lose: 25
+tie: 5
+Episode 93000	Average return: 1.96
+4
+win: 74
+lose: 23
+tie: 3
+Episode 94000	Average return: 1.87
+4
+win: 71
+lose: 19
+tie: 10
+Episode 95000	Average return: 1.87
+4
+win: 67
+lose: 28
+tie: 5
+Episode 96000	Average return: 1.88
+4
+win: 66
+lose: 28
+tie: 6
+Episode 97000	Average return: 2.04
+4
+win: 68
+lose: 24
+tie: 8
+Episode 98000	Average return: 1.78
+4
+win: 61
+lose: 34
+tie: 5
+Episode 99000	Average return: 1.84
+4
+win: 73
+lose: 22
+tie: 5
+Episode 100000	Average return: 2.00
+4
+win: 69
+lose: 24
+tie: 7
