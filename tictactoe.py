@@ -105,7 +105,7 @@ class Policy(nn.Module):
     The Tic-Tac-Toe Policy
     """
 
-    def __init__(self, input_size=27, hidden_size=128, output_size=9):
+    def __init__(self, input_size=27, hidden_size=1024, output_size=9):
         super(Policy, self).__init__()
         self.affine1 = nn.Linear(input_size, hidden_size)
         self.affine2 = nn.Linear(hidden_size, output_size)
@@ -114,6 +114,7 @@ class Policy(nn.Module):
         x = F.relu(self.affine1(x))
         action_scores = self.affine2(x)
         return F.softmax(action_scores, dim=1)
+
 
 
 def select_action(policy, state):
@@ -134,6 +135,7 @@ def compute_returns(rewards, gamma=1.0):
                       obtained at time step t
       @param gamma: the discount factor
       @returns list of floats representing the episode's returns
+<<<<<<< Updated upstream
           G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + ...
 
     """
@@ -145,6 +147,7 @@ def compute_returns(rewards, gamma=1.0):
     for i in range(len(rewards)):
         G_ts.append(np.dot(R[i:].T, powers[:len(rewards) - i]))
     return G_ts
+
 
 
 def finish_episode(saved_rewards, saved_logprobs, gamma=1.0):
@@ -167,14 +170,14 @@ def get_reward(status):
     """Returns a numeric given an environment status."""
     return {
         Environment.STATUS_VALID_MOVE: 0,
-        Environment.STATUS_INVALID_MOVE: -10,
+        Environment.STATUS_INVALID_MOVE: -61.5,
         Environment.STATUS_WIN: 4,
         Environment.STATUS_TIE: 1,
         Environment.STATUS_LOSE: -4
     }[status]
 
 
-def train(policy, env, gamma=1.0, log_interval=1000):
+def train(policy, env, gamma=1.0, log_interval=10000):
     """Train policy gradient."""
     optimizer = optim.Adam(policy.parameters(), lr=0.001)
     scheduler = torch.optim.lr_scheduler.StepLR(
@@ -192,6 +195,8 @@ def train(policy, env, gamma=1.0, log_interval=1000):
             reward = get_reward(status)
             saved_logprobs.append(logprob)
             saved_rewards.append(reward)
+            if status == 'inv':
+                print ('INVALID in ', i_episode)
 
         R = compute_returns(saved_rewards)[0]
         running_reward += R
@@ -209,7 +214,7 @@ def train(policy, env, gamma=1.0, log_interval=1000):
             print('tie:', tie)
             running_reward = 0
             torch.save(policy.state_dict(),
-                       "test6/policy-%d.pkl" % i_episode)
+                       "test1/policy-%d.pkl" % i_episode)
 
         if i_episode % 1 == 0:  # batch_size
             optimizer.step()
