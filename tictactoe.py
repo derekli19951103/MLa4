@@ -10,6 +10,10 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch.distributions
 from torch.autograd import Variable
+import matplotlib.pyplot as plt
+
+x_episode = []
+y_avg_return = []
 
 
 class Environment(object):
@@ -171,13 +175,13 @@ def get_reward(status):
     return {
         Environment.STATUS_VALID_MOVE: 0,
         Environment.STATUS_INVALID_MOVE: -61.5,
-        Environment.STATUS_WIN: 4,
-        Environment.STATUS_TIE: 1,
-        Environment.STATUS_LOSE: -4
+        Environment.STATUS_WIN: 6,
+        Environment.STATUS_TIE: 0,
+        Environment.STATUS_LOSE: -3
     }[status]
 
 
-def train(policy, env, gamma=1.0, log_interval=10000):
+def train(policy, env, gamma=1.0, log_interval=1000):
     """Train policy gradient."""
     optimizer = optim.Adam(policy.parameters(), lr=0.001)
     scheduler = torch.optim.lr_scheduler.StepLR(
@@ -195,8 +199,6 @@ def train(policy, env, gamma=1.0, log_interval=10000):
             reward = get_reward(status)
             saved_logprobs.append(logprob)
             saved_rewards.append(reward)
-            if status == 'inv':
-                print ('INVALID in ', i_episode)
 
         R = compute_returns(saved_rewards)[0]
         running_reward += R
@@ -207,11 +209,15 @@ def train(policy, env, gamma=1.0, log_interval=10000):
             print('Episode {}\tAverage return: {:.2f}'.format(
                 i_episode,
                 running_reward / log_interval))
+            x_episode.append(i_episode)
+            y_avg_return.append(running_reward / log_interval)
+            print()
             print(np.argmax(first_move_distr(policy, env)))
-            win, lose, tie = rate(env, policy)
+            win, lose, tie, invalid = rate(env, policy)
             print('win:', win)
             print('lose:', lose)
             print('tie:', tie)
+            print('invalid:', invalid)
             running_reward = 0
             torch.save(policy.state_dict(),
                        "test1/policy-%d.pkl" % i_episode)
@@ -233,7 +239,7 @@ def first_move_distr(policy, env):
 
 def load_weights(policy, episode):
     """Load saved weights"""
-    weights = torch.load("ttt/policy-%d.pkl" % episode)
+    weights = torch.load("test1/policy-%d.pkl" % episode)
     policy.load_state_dict(weights)
 
 
@@ -249,24 +255,32 @@ def me_play(env, action):
     env.render()
 
 
-def rate(env, policy):
+def rate(env, policy, flag=0):
     win = 0
     lose = 0
     tie = 0
+    invalid = 0
     for session in range(100):
+        if (flag == 1):
+            print ("========Round%d========" % session )
         state = env.reset()
         done = False
         status = env.STATUS_VALID_MOVE
         while not done:
             action, logprob = select_action(policy, state)
             state, status, done = env.play_against_random(action)
+            if flag == 1:
+                env.render()
+            if status == 'inv':
+                invalid += 1
+
         if status == env.STATUS_WIN:
             win += 1
         if status == env.STATUS_LOSE:
             lose += 1
         if status == env.STATUS_TIE:
             tie += 1
-    return win, lose, tie
+    return win, lose, tie, invalid
 
 
 if __name__ == '__main__':
@@ -278,10 +292,24 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         # `python tictactoe.py` to train the agent
         train(policy, env)
+
     else:
         # `python tictactoe.py <ep>` to print the first move distribution
         # using weightt checkpoint at episode int(<ep>)
-        ep = int(sys.argv[1])
+        ep = 200000 #int(sys.argv[1])
         load_weights(policy, ep)
         print(first_move_distr(policy, env))
         print(np.argmax(first_move_distr(policy, env)))
+        print("Rates:", rate(env, policy))
+
+        plt.step(x_episode[:15], y_avg_return[:15], label="Episode VS Average Return")
+        plt.title('Learning Curve')
+        plt.xlabel('Episode')
+        plt.ylabel("Average Return")
+        plt.legend()
+        plt.savefig("part5a.jpg")
+
+
+
+
+
