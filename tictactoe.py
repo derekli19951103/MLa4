@@ -181,7 +181,7 @@ def get_reward(status):
     }[status]
 
 
-def train(policy, env, gamma=1.0, log_interval=1000):
+def train(policy, env, gamma=1.0, log_interval=100):
     """Train policy gradient."""
     optimizer = optim.Adam(policy.parameters(), lr=0.001)
     scheduler = torch.optim.lr_scheduler.StepLR(
@@ -302,7 +302,7 @@ if __name__ == '__main__':
         print(np.argmax(first_move_distr(policy, env)))
         print("Rates:", rate(env, policy))
 
-        plt.step(x_episode[:15], y_avg_return[:15], label="Episode VS Average Return")
+        plt.step(x_episode[5:100], y_avg_return[5:100], label="Episode VS Average Return")
         plt.title('Learning Curve')
         plt.xlabel('Episode')
         plt.ylabel("Average Return")
