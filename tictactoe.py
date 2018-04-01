@@ -12,8 +12,13 @@ import torch.distributions
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 
-x_episode = []
-y_avg_return = []
+x_episodes = [[],[],[]]
+y_avg_returns = [[],[],[]]
+y_wins = [[],[],[]]
+y_loses = [[],[],[]]
+y_ties = [[],[],[]]
+y_invalids = [[],[],[]]
+
 
 
 class Environment(object):
@@ -120,7 +125,6 @@ class Policy(nn.Module):
         return F.softmax(action_scores, dim=1)
 
 
-
 def select_action(policy, state):
     """Samples an action from the policy at the state."""
     state = torch.from_numpy(state).long().unsqueeze(0)
@@ -181,14 +185,14 @@ def get_reward(status):
     }[status]
 
 
-def train(policy, env, gamma=1.0, log_interval=100):
+def train(policy, env, index, gamma=1.0, log_interval=1000):
     """Train policy gradient."""
     optimizer = optim.Adam(policy.parameters(), lr=0.001)
     scheduler = torch.optim.lr_scheduler.StepLR(
         optimizer, step_size=10000, gamma=0.9)
     running_reward = 0
     # inv_move = []
-    for i_episode in count(1):
+    for i_episode in range(200000):
         saved_rewards = []
         saved_logprobs = []
         state = env.reset()
@@ -209,15 +213,23 @@ def train(policy, env, gamma=1.0, log_interval=100):
             print('Episode {}\tAverage return: {:.2f}'.format(
                 i_episode,
                 running_reward / log_interval))
-            x_episode.append(i_episode)
-            y_avg_return.append(running_reward / log_interval)
-            print()
+
+            x_episodes[index].append(i_episode)
+            y_avg_returns[index].append(running_reward / log_interval)
+
             print(np.argmax(first_move_distr(policy, env)))
             win, lose, tie, invalid = rate(env, policy)
+
+            y_wins[index].append(win)
+            y_loses[index].append(lose)
+            y_ties[index].append(tie)
+            y_invalids[index].append(invalid)
+
             print('win:', win)
             print('lose:', lose)
             print('tie:', tie)
             print('invalid:', invalid)
+
             running_reward = 0
             torch.save(policy.state_dict(),
                        "test1/policy-%d.pkl" % i_episode)
@@ -287,27 +299,58 @@ if __name__ == '__main__':
     import sys
 
     policy = Policy()
+    h_units = [128, 512, 1024]
+    policy_a = Policy(hidden_size=h_units[0])
+    policy_b = Policy(hidden_size=h_units[1])
+    policy_c = Policy(hidden_size=h_units[2])
+    policies = [policy_a, policy_b, policy_c]
+
     env = Environment()
 
     if len(sys.argv) == 1:
         # `python tictactoe.py` to train the agent
-        train(policy, env)
+        for i in range(len(policies)):
+            # Part 5ab: Hidden unit VS average return, 3 value
+            train(policies[i], env, i)
+            plt.step(x_episodes[i][5:], y_avg_returns[i][5:], label="Episode VS Average Return")
+            plt.title('Hidden Unit: ' + str(h_units[i]))
+            plt.xlabel('Episode')
+            plt.ylabel("Average Return")
+            # plt.legend()
+            plt.savefig("part5a_" + str(h_units[i]) + ".jpg")
+            plt.close()
+
+            # Part 5c: When stop invalid move, VS Episode
+            plt.step(x_episodes[i][5:], y_wins[i][5:], label="Win")
+            plt.step(x_episodes[i][5:], y_loses[i][5:], label="Lose")
+            plt.step(x_episodes[i][5:], y_ties[i][5:], label="Tie")
+            plt.step(x_episodes[i][5:], y_invalids[i][5:], label="Invalid")
+            plt.title('Hidden Unit: ' + str(h_units[i]))
+            plt.xlabel('Episode')
+            plt.ylabel("Win/Lose/Tie/Invalid")
+            plt.legend()
+            plt.savefig("part5c+part6_" + str(h_units[i]) + ".jpg")
+            plt.close()
+
+            print ("Hidden Unit:", h_units[i], 'done')
+
+        # First Move Distribution over Episodes
 
     else:
         # `python tictactoe.py <ep>` to print the first move distribution
         # using weightt checkpoint at episode int(<ep>)
-        ep = 200000 #int(sys.argv[1])
+        ep = 130000 #int(sys.argv[1])
         load_weights(policy, ep)
         print(first_move_distr(policy, env))
         print(np.argmax(first_move_distr(policy, env)))
         print("Rates:", rate(env, policy))
 
-        plt.step(x_episode[5:100], y_avg_return[5:100], label="Episode VS Average Return")
-        plt.title('Learning Curve')
-        plt.xlabel('Episode')
-        plt.ylabel("Average Return")
-        plt.legend()
-        plt.savefig("part5a.jpg")
+        # Episode VS Win Lose Tie Rate
+
+
+
+
+
 
 
 
