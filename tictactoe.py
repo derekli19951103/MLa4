@@ -210,14 +210,14 @@ def train(policy, env, index, gamma=1.0, log_interval=1000):
         finish_episode(saved_rewards, saved_logprobs, gamma)
 
         if i_episode % log_interval == 0:
-            print('Episode {}\tAverage return: {:.2f}'.format(
-                i_episode,
-                running_reward / log_interval))
+            # print('Episode {}\tAverage return: {:.2f}'.format(
+            #     i_episode,
+            #     running_reward / log_interval))
 
             x_episodes[index].append(i_episode)
             y_avg_returns[index].append(running_reward / log_interval)
 
-            print(np.argmax(first_move_distr(policy, env)))
+            # print(np.argmax(first_move_distr(policy, env)))
             win, lose, tie, invalid = rate(env, policy)
 
             y_wins[index].append(win)
@@ -225,10 +225,10 @@ def train(policy, env, index, gamma=1.0, log_interval=1000):
             y_ties[index].append(tie)
             y_invalids[index].append(invalid)
 
-            print('win:', win)
-            print('lose:', lose)
-            print('tie:', tie)
-            print('invalid:', invalid)
+            # print('win:', win)
+            # print('lose:', lose)
+            # print('tie:', tie)
+            # print('invalid:', invalid)
 
             running_reward = 0
             torch.save(policy.state_dict(),
@@ -324,15 +324,31 @@ if __name__ == '__main__':
             plt.step(x_episodes[i][5:], y_wins[i][5:], label="Win")
             plt.step(x_episodes[i][5:], y_loses[i][5:], label="Lose")
             plt.step(x_episodes[i][5:], y_ties[i][5:], label="Tie")
-            plt.step(x_episodes[i][5:], y_invalids[i][5:], label="Invalid")
+            # plt.step(x_episodes[i][5:], y_invalids[i][5:], label="Invalid")
             plt.title('Hidden Unit: ' + str(h_units[i]))
             plt.xlabel('Episode')
-            plt.ylabel("Win/Lose/Tie/Invalid")
+            plt.ylabel("Win/Lose/Tie")
             plt.legend()
             plt.savefig("part5c+part6_" + str(h_units[i]) + ".jpg")
             plt.close()
 
+            plt.step(x_episodes[i][5:], y_invalids[i][5:], label="Invalid")
+            plt.title('Hidden Unit: ' + str(h_units[i]))
+            plt.xlabel('Episode')
+            plt.ylabel("Invalid")
+            plt.legend()
+            plt.savefig("part5c_invalid_" + str(h_units[i]) + ".jpg")
+            plt.close()
+
+            print ("Hidden Unit:", h_units[i], "Avg return", sum(y_avg_returns[i])/len(y_avg_returns[i]))
+            print ("Hidden Unit:", h_units[i], "Avg Win", sum(y_wins[i])/len(y_wins[i]))
+            print ("Hidden Unit:", h_units[i], "Avg Lose", sum(y_loses[i])/len(y_loses[i]))
+            print ("Hidden Unit:", h_units[i], "Avg Tie", sum(y_ties[i])/len(y_ties[i]))
+            print ("Hidden Unit:", h_units[i], "Avg Invalid", sum(y_invalids[i])/len(y_invalids[i]))
             print ("Hidden Unit:", h_units[i], 'done')
+
+            print ('================================================')
+
 
         # First Move Distribution over Episodes
 
