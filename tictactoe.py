@@ -18,7 +18,7 @@ y_wins = [[],[],[]]
 y_loses = [[],[],[]]
 y_ties = [[],[],[]]
 y_invalids = [[],[],[]]
-
+y_first_moves = [[], [], [], [], [], [], [], [], []]
 
 
 class Environment(object):
@@ -272,16 +272,18 @@ def rate(env, policy, flag=0):
     lose = 0
     tie = 0
     invalid = 0
+    round_count = 0
     for session in range(100):
-        if (flag == 1):
+        if (flag == 1) and round_count < 5:
             print ("========Round%d========" % session )
+            round_count+=1
         state = env.reset()
         done = False
         status = env.STATUS_VALID_MOVE
         while not done:
             action, logprob = select_action(policy, state)
             state, status, done = env.play_against_random(action)
-            if flag == 1:
+            if flag == 1 and round_count < 5:
                 env.render()
             if status == 'inv':
                 invalid += 1
@@ -345,12 +347,44 @@ if __name__ == '__main__':
             print ("Hidden Unit:", h_units[i], "Avg Lose", sum(y_loses[i])/len(y_loses[i]))
             print ("Hidden Unit:", h_units[i], "Avg Tie", sum(y_ties[i])/len(y_ties[i]))
             print ("Hidden Unit:", h_units[i], "Avg Invalid", sum(y_invalids[i])/len(y_invalids[i]))
-            print ("Hidden Unit:", h_units[i], 'done')
 
+            print ("Hidden Unit:", h_units[i], 'done')
             print ('================================================')
 
 
-        # First Move Distribution over Episodes
+        # part5d: First Move Distribution over Episodes
+        print ("============Part5d============")
+        ep = x_episodes[2][-1]
+        load_weights(policy, ep)
+        print("Rates:", rate(env, policy, 1))
+
+
+        # part7
+        print ("============Part7============")
+        for episode in x_episodes[2]:
+            load_weights(policy, episode)
+            for i in range(9):
+                y_first_moves[i].append(first_move_distr(policy, env)[0][i])
+
+
+        plt.step(x_episodes[2], y_first_moves[0], label=str(0))
+        plt.step(x_episodes[2], y_first_moves[1], label=str(1))
+        plt.step(x_episodes[2], y_first_moves[2], label=str(2))
+        plt.step(x_episodes[2], y_first_moves[3], label=str(3))
+        plt.step(x_episodes[2], y_first_moves[4], label=str(4))
+        plt.step(x_episodes[2], y_first_moves[5], label=str(5))
+        plt.step(x_episodes[2], y_first_moves[6], label=str(6))
+        plt.step(x_episodes[2], y_first_moves[7], label=str(7))
+        plt.step(x_episodes[2], y_first_moves[8], label=str(8))
+
+        plt.title('Hidden Unit: ' + str(h_units[2]))
+        plt.xlabel('Episode')
+        plt.ylabel("First Moves")
+        plt.legend()
+
+        plt.savefig("part7_" + str(h_units[2]) + ".jpg")
+        plt.close()
+
 
     else:
         # `python tictactoe.py <ep>` to print the first move distribution
