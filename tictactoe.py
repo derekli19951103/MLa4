@@ -192,7 +192,7 @@ def train(policy, env, index, gamma=1.0, log_interval=1000):
         optimizer, step_size=10000, gamma=0.9)
     running_reward = 0
     # inv_move = []
-    for i_episode in range(200000):
+    for i_episode in range(100000):
         saved_rewards = []
         saved_logprobs = []
         state = env.reset()
@@ -300,8 +300,7 @@ def rate(env, policy, flag=0):
 if __name__ == '__main__':
     import sys
 
-    policy = Policy()
-    h_units = [128, 512, 1024]
+    h_units = [64, 128, 512]
     policy_a = Policy(hidden_size=h_units[0])
     policy_b = Policy(hidden_size=h_units[1])
     policy_c = Policy(hidden_size=h_units[2])
@@ -355,16 +354,16 @@ if __name__ == '__main__':
         # part5d: First Move Distribution over Episodes
         print ("============Part5d============")
         ep = x_episodes[2][-1]
-        load_weights(policy, ep)
-        print("Rates:", rate(env, policy, 1))
+        load_weights(policy_c, ep)
+        print("Rates:", rate(env, policy_c, 1))
 
 
         # part7
         print ("============Part7============")
         for episode in x_episodes[2]:
-            load_weights(policy, episode)
+            load_weights(policy_c, episode)
             for i in range(9):
-                y_first_moves[i].append(first_move_distr(policy, env)[0][i])
+                y_first_moves[i].append(first_move_distr(policy_c, env)[0][i])
 
 
         plt.step(x_episodes[2], y_first_moves[0], label=str(0))
@@ -383,6 +382,7 @@ if __name__ == '__main__':
         plt.legend()
 
         plt.savefig("part7_" + str(h_units[2]) + ".jpg")
+        print ("Part7 image saved")
         plt.close()
 
 
