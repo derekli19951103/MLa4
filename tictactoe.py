@@ -12,12 +12,16 @@ import torch.distributions
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 
-x_episodes = [[],[],[]]
-y_avg_returns = [[],[],[]]
-y_wins = [[],[],[]]
-y_loses = [[],[],[]]
-y_ties = [[],[],[]]
-y_invalids = [[],[],[]]
+
+np.random.seed(42)
+random.seed(42)
+torch.manual_seed(42)
+x_episodes = [[], [], []]
+y_avg_returns = [[], [], []]
+y_wins = [[], [], []]
+y_loses = [[], [], []]
+y_ties = [[], [], []]
+y_invalids = [[], [], []]
 y_first_moves = [[], [], [], [], [], [], [], [], []]
 
 
@@ -114,10 +118,11 @@ class Policy(nn.Module):
     The Tic-Tac-Toe Policy
     """
 
-    def __init__(self, input_size=27, hidden_size=1024, output_size=9):
+    def __init__(self, input_size=27, hidden_size=256, output_size=9):
         super(Policy, self).__init__()
         self.affine1 = nn.Linear(input_size, hidden_size)
         self.affine2 = nn.Linear(hidden_size, output_size)
+
 
     def forward(self, x):
         x = F.relu(self.affine1(x))
@@ -143,19 +148,23 @@ def compute_returns(rewards, gamma=1.0):
                       obtained at time step t
       @param gamma: the discount factor
       @returns list of floats representing the episode's returns
-<<<<<<< Updated upstream
           G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + ...
-
+    >>> compute_returns([0,0,0,1], 1.0)
+    [1.0, 1.0, 1.0, 1.0]
+    >>> compute_returns([0,0,0,1], 0.9)
+    [0.7290000000000001, 0.81, 0.9, 1.0]
+    >>> compute_returns([0,-0.5,5,0.5,-10], 0.9)
+    [-2.5965000000000003, -2.8850000000000002, -2.6500000000000004, -8.5, -10.0]
     """
-    R = np.array(rewards)
-    steps = np.array(list(range(len(rewards))))
-    gammas = np.array([gamma] * len(rewards))
-    powers = np.power(gammas, steps)
-    G_ts = []
-    for i in range(len(rewards)):
-        G_ts.append(np.dot(R[i:].T, powers[:len(rewards) - i]))
-    return G_ts
+    G = [0] * len(rewards)
 
+    for i in reversed(range(len(rewards))):
+        if i == len(rewards) - 1:
+            G[i] = rewards[i]*1.0
+        else:
+            G[i] = rewards[i] + gamma * G[i + 1]
+
+    return G
 
 
 def finish_episode(saved_rewards, saved_logprobs, gamma=1.0):
@@ -177,22 +186,22 @@ def finish_episode(saved_rewards, saved_logprobs, gamma=1.0):
 def get_reward(status):
     """Returns a numeric given an environment status."""
     return {
-        Environment.STATUS_VALID_MOVE: 0,
-        Environment.STATUS_INVALID_MOVE: -61.5,
-        Environment.STATUS_WIN: 6,
-        Environment.STATUS_TIE: 0,
-        Environment.STATUS_LOSE: -3
+        Environment.STATUS_VALID_MOVE: 10,
+        Environment.STATUS_INVALID_MOVE: -500,
+        Environment.STATUS_WIN: 1000,
+        Environment.STATUS_TIE: -20,
+        Environment.STATUS_LOSE: -30
     }[status]
 
 
-def train(policy, env, index, gamma=1.0, log_interval=1000):
+def train(policy, env, index, gamma=0.75, log_interval=1000):
     """Train policy gradient."""
     optimizer = optim.Adam(policy.parameters(), lr=0.001)
     scheduler = torch.optim.lr_scheduler.StepLR(
         optimizer, step_size=10000, gamma=0.9)
     running_reward = 0
     # inv_move = []
-    for i_episode in range(100000):
+    for i_episode in range(70000):
         saved_rewards = []
         saved_logprobs = []
         state = env.reset()
@@ -203,6 +212,8 @@ def train(policy, env, index, gamma=1.0, log_interval=1000):
             reward = get_reward(status)
             saved_logprobs.append(logprob)
             saved_rewards.append(reward)
+            # if status == 'inv':
+            #     print ("invalid move")
 
         R = compute_returns(saved_rewards)[0]
         running_reward += R
@@ -262,7 +273,7 @@ def baby_play(env, policy):
 
 
 def me_play(env, action):
-    _,status,_=env.step(action)
+    _, status, _ = env.step(action)
     print(status)
     env.render()
 
@@ -274,16 +285,16 @@ def rate(env, policy, flag=0):
     invalid = 0
     round_count = 0
     for session in range(100):
-        if (flag == 1) and round_count < 5:
-            print ("========Round%d========" % session )
-            round_count+=1
+        if (flag == 1) and round_count <= 5:
+            print("========Round%d========" % session)
+            round_count += 1
         state = env.reset()
         done = False
         status = env.STATUS_VALID_MOVE
         while not done:
             action, logprob = select_action(policy, state)
             state, status, done = env.play_against_random(action)
-            if flag == 1 and round_count < 5:
+            if flag == 1 and round_count <= 5:
                 env.render()
             if status == 'inv':
                 invalid += 1
@@ -300,7 +311,7 @@ def rate(env, policy, flag=0):
 if __name__ == '__main__':
     import sys
 
-    h_units = [64, 128, 512]
+    h_units = [64, 128, 256]
     policy_a = Policy(hidden_size=h_units[0])
     policy_b = Policy(hidden_size=h_units[1])
     policy_c = Policy(hidden_size=h_units[2])
@@ -313,7 +324,7 @@ if __name__ == '__main__':
         for i in range(len(policies)):
             # Part 5ab: Hidden unit VS average return, 3 value
             train(policies[i], env, i)
-            plt.step(x_episodes[i][5:], y_avg_returns[i][5:], label="Episode VS Average Return")
+            plt.plot(x_episodes[i][5:], y_avg_returns[i][5:], label="Episode VS Average Return")
             plt.title('Hidden Unit: ' + str(h_units[i]))
             plt.xlabel('Episode')
             plt.ylabel("Average Return")
@@ -322,10 +333,10 @@ if __name__ == '__main__':
             plt.close()
 
             # Part 5c: When stop invalid move, VS Episode
-            plt.step(x_episodes[i][5:], y_wins[i][5:], label="Win")
-            plt.step(x_episodes[i][5:], y_loses[i][5:], label="Lose")
-            plt.step(x_episodes[i][5:], y_ties[i][5:], label="Tie")
-            # plt.step(x_episodes[i][5:], y_invalids[i][5:], label="Invalid")
+            plt.plot(x_episodes[i][5:], y_wins[i][5:], label="Win")
+            plt.plot(x_episodes[i][5:], y_loses[i][5:], label="Lose")
+            plt.plot(x_episodes[i][5:], y_ties[i][5:], label="Tie")
+            # plt.plot(x_episodes[i][5:], y_invalids[i][5:], label="Invalid")
             plt.title('Hidden Unit: ' + str(h_units[i]))
             plt.xlabel('Episode')
             plt.ylabel("Win/Lose/Tie")
@@ -333,7 +344,7 @@ if __name__ == '__main__':
             plt.savefig("part5c+part6_" + str(h_units[i]) + ".jpg")
             plt.close()
 
-            plt.step(x_episodes[i][5:], y_invalids[i][5:], label="Invalid")
+            plt.plot(x_episodes[i][5:], y_invalids[i][5:], label="Invalid")
             plt.title('Hidden Unit: ' + str(h_units[i]))
             plt.xlabel('Episode')
             plt.ylabel("Invalid")
@@ -341,40 +352,37 @@ if __name__ == '__main__':
             plt.savefig("part5c_invalid_" + str(h_units[i]) + ".jpg")
             plt.close()
 
-            print ("Hidden Unit:", h_units[i], "Avg return", sum(y_avg_returns[i])/len(y_avg_returns[i]))
-            print ("Hidden Unit:", h_units[i], "Avg Win", sum(y_wins[i])/len(y_wins[i]))
-            print ("Hidden Unit:", h_units[i], "Avg Lose", sum(y_loses[i])/len(y_loses[i]))
-            print ("Hidden Unit:", h_units[i], "Avg Tie", sum(y_ties[i])/len(y_ties[i]))
-            print ("Hidden Unit:", h_units[i], "Avg Invalid", sum(y_invalids[i])/len(y_invalids[i]))
+            print("Hidden Unit:", h_units[i], "Avg return", sum(y_avg_returns[i]) / len(y_avg_returns[i]))
+            print("Hidden Unit:", h_units[i], "Avg Win", sum(y_wins[i]) / len(y_wins[i]))
+            print("Hidden Unit:", h_units[i], "Avg Lose", sum(y_loses[i]) / len(y_loses[i]))
+            print("Hidden Unit:", h_units[i], "Avg Tie", sum(y_ties[i]) / len(y_ties[i]))
+            print("Hidden Unit:", h_units[i], "Avg Invalid", sum(y_invalids[i][3:]) / len(y_invalids[i][3:]))
 
-            print ("Hidden Unit:", h_units[i], 'done')
-            print ('================================================')
-
+            print("Hidden Unit:", h_units[i], 'done')
+            print('================================================')
 
         # part5d: First Move Distribution over Episodes
-        print ("============Part5d============")
+        print("============Part5d============")
         ep = x_episodes[2][-1]
         load_weights(policy_c, ep)
         print("Rates:", rate(env, policy_c, 1))
 
-
-        # part7
-        print ("============Part7============")
+        # part7 first move
+        print("============Part7============")
         for episode in x_episodes[2]:
             load_weights(policy_c, episode)
             for i in range(9):
                 y_first_moves[i].append(first_move_distr(policy_c, env)[0][i])
 
-
-        plt.step(x_episodes[2], y_first_moves[0], label=str(0))
-        plt.step(x_episodes[2], y_first_moves[1], label=str(1))
-        plt.step(x_episodes[2], y_first_moves[2], label=str(2))
-        plt.step(x_episodes[2], y_first_moves[3], label=str(3))
-        plt.step(x_episodes[2], y_first_moves[4], label=str(4))
-        plt.step(x_episodes[2], y_first_moves[5], label=str(5))
-        plt.step(x_episodes[2], y_first_moves[6], label=str(6))
-        plt.step(x_episodes[2], y_first_moves[7], label=str(7))
-        plt.step(x_episodes[2], y_first_moves[8], label=str(8))
+        plt.plot(x_episodes[2], y_first_moves[0], label=str(0))
+        plt.plot(x_episodes[2], y_first_moves[1], label=str(1))
+        plt.plot(x_episodes[2], y_first_moves[2], label=str(2))
+        plt.plot(x_episodes[2], y_first_moves[3], label=str(3))
+        plt.plot(x_episodes[2], y_first_moves[4], label=str(4))
+        plt.plot(x_episodes[2], y_first_moves[5], label=str(5))
+        plt.plot(x_episodes[2], y_first_moves[6], label=str(6))
+        plt.plot(x_episodes[2], y_first_moves[7], label=str(7))
+        plt.plot(x_episodes[2], y_first_moves[8], label=str(8))
 
         plt.title('Hidden Unit: ' + str(h_units[2]))
         plt.xlabel('Episode')
@@ -382,27 +390,17 @@ if __name__ == '__main__':
         plt.legend()
 
         plt.savefig("part7_" + str(h_units[2]) + ".jpg")
-        print ("Part7 image saved")
+        print("Part7 image saved")
         plt.close()
 
 
     else:
         # `python tictactoe.py <ep>` to print the first move distribution
         # using weightt checkpoint at episode int(<ep>)
-        ep = 130000 #int(sys.argv[1])
+        ep = 130000  # int(sys.argv[1])
         load_weights(policy, ep)
         print(first_move_distr(policy, env))
         print(np.argmax(first_move_distr(policy, env)))
         print("Rates:", rate(env, policy))
 
         # Episode VS Win Lose Tie Rate
-
-
-
-
-
-
-
-
-
-
