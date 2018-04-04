@@ -12,17 +12,16 @@ import torch.distributions
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 
-
 np.random.seed(42)
 random.seed(42)
 torch.manual_seed(42)
-x_episodes = [[], [], []]
-y_avg_returns = [[], [], []]
-y_wins = [[], [], []]
-y_loses = [[], [], []]
-y_ties = [[], [], []]
-y_invalids = [[], [], []]
-y_first_moves = [[], [], [], [], [], [], [], [], []]
+avg_return = []
+episodes = []
+wins = []
+loses = []
+ties = []
+invalids = []
+first_moves = [[0], [0], [0], [0], [0], [0], [0], [0], [0]]
 
 
 class Environment(object):
@@ -123,7 +122,6 @@ class Policy(nn.Module):
         self.affine1 = nn.Linear(input_size, hidden_size)
         self.affine2 = nn.Linear(hidden_size, output_size)
 
-
     def forward(self, x):
         x = F.relu(self.affine1(x))
         action_scores = self.affine2(x)
@@ -160,7 +158,7 @@ def compute_returns(rewards, gamma=1.0):
 
     for i in reversed(range(len(rewards))):
         if i == len(rewards) - 1:
-            G[i] = rewards[i]*1.0
+            G[i] = rewards[i] * 1.0
         else:
             G[i] = rewards[i] + gamma * G[i + 1]
 
@@ -194,14 +192,14 @@ def get_reward(status):
     }[status]
 
 
-def train(policy, env, index, gamma=0.75, log_interval=1000):
+def train(policy, env, gamma=0.75, log_interval=1000):
     """Train policy gradient."""
     optimizer = optim.Adam(policy.parameters(), lr=0.001)
     scheduler = torch.optim.lr_scheduler.StepLR(
         optimizer, step_size=10000, gamma=0.9)
     running_reward = 0
     # inv_move = []
-    for i_episode in range(70000):
+    for i_episode in count(1):
         saved_rewards = []
         saved_logprobs = []
         state = env.reset()
@@ -212,43 +210,41 @@ def train(policy, env, index, gamma=0.75, log_interval=1000):
             reward = get_reward(status)
             saved_logprobs.append(logprob)
             saved_rewards.append(reward)
-            # if status == 'inv':
-            #     print ("invalid move")
 
         R = compute_returns(saved_rewards)[0]
         running_reward += R
 
         finish_episode(saved_rewards, saved_logprobs, gamma)
 
-        if i_episode % log_interval == 0:
-            # print('Episode {}\tAverage return: {:.2f}'.format(
-            #     i_episode,
-            #     running_reward / log_interval))
-
-            x_episodes[index].append(i_episode)
-            y_avg_returns[index].append(running_reward / log_interval)
-
-            # print(np.argmax(first_move_distr(policy, env)))
+        if i_episode <= 60000 and i_episode % log_interval == 0:
+            avg_return.append(running_reward / log_interval)
+            episodes.append(i_episode)
             win, lose, tie, invalid = rate(env, policy)
+            wins.append(win)
+            loses.append(lose)
+            ties.append(tie)
+            invalids.append(invalid)
+            first_moves.append(np.argmax(first_move_distr(policy, env)))
+            print(np.argmax(first_move_distr(policy, env)))
+            print('win:', win)
+            print('lose:', lose)
+            print('tie:', tie)
 
-            y_wins[index].append(win)
-            y_loses[index].append(lose)
-            y_ties[index].append(tie)
-            y_invalids[index].append(invalid)
-
-            # print('win:', win)
-            # print('lose:', lose)
-            # print('tie:', tie)
-            # print('invalid:', invalid)
-
+        if i_episode % log_interval == 0:
+            print('Episode {}\tAverage return: {:.2f}'.format(
+                i_episode,
+                running_reward / log_interval))
             running_reward = 0
             torch.save(policy.state_dict(),
-                       "test1/policy-%d.pkl" % i_episode)
+                       "testing/policy-%d.pkl" % i_episode)
 
         if i_episode % 1 == 0:  # batch_size
             optimizer.step()
             scheduler.step()
             optimizer.zero_grad()
+
+        if i_episode == 60001:
+            break
 
 
 def first_move_distr(policy, env):
@@ -262,7 +258,7 @@ def first_move_distr(policy, env):
 
 def load_weights(policy, episode):
     """Load saved weights"""
-    weights = torch.load("test1/policy-%d.pkl" % episode)
+    weights = torch.load("testing/policy-%d.pkl" % episode)
     policy.load_state_dict(weights)
 
 
@@ -311,96 +307,85 @@ def rate(env, policy, flag=0):
 if __name__ == '__main__':
     import sys
 
-    h_units = [64, 128, 256]
-    policy_a = Policy(hidden_size=h_units[0])
-    policy_b = Policy(hidden_size=h_units[1])
-    policy_c = Policy(hidden_size=h_units[2])
-    policies = [policy_a, policy_b, policy_c]
-
-    env = Environment()
-
-    if len(sys.argv) == 1:
-        # `python tictactoe.py` to train the agent
-        for i in range(len(policies)):
-            # Part 5ab: Hidden unit VS average return, 3 value
-            train(policies[i], env, i)
-            plt.plot(x_episodes[i][5:], y_avg_returns[i][5:], label="Episode VS Average Return")
-            plt.title('Hidden Unit: ' + str(h_units[i]))
-            plt.xlabel('Episode')
-            plt.ylabel("Average Return")
-            # plt.legend()
-            plt.savefig("part5a_" + str(h_units[i]) + ".jpg")
-            plt.close()
-
-            # Part 5c: When stop invalid move, VS Episode
-            plt.plot(x_episodes[i][5:], y_wins[i][5:], label="Win")
-            plt.plot(x_episodes[i][5:], y_loses[i][5:], label="Lose")
-            plt.plot(x_episodes[i][5:], y_ties[i][5:], label="Tie")
-            # plt.plot(x_episodes[i][5:], y_invalids[i][5:], label="Invalid")
-            plt.title('Hidden Unit: ' + str(h_units[i]))
-            plt.xlabel('Episode')
-            plt.ylabel("Win/Lose/Tie")
-            plt.legend()
-            plt.savefig("part5c+part6_" + str(h_units[i]) + ".jpg")
-            plt.close()
-
-            plt.plot(x_episodes[i][5:], y_invalids[i][5:], label="Invalid")
-            plt.title('Hidden Unit: ' + str(h_units[i]))
-            plt.xlabel('Episode')
-            plt.ylabel("Invalid")
-            plt.legend()
-            plt.savefig("part5c_invalid_" + str(h_units[i]) + ".jpg")
-            plt.close()
-
-            print("Hidden Unit:", h_units[i], "Avg return", sum(y_avg_returns[i]) / len(y_avg_returns[i]))
-            print("Hidden Unit:", h_units[i], "Avg Win", sum(y_wins[i]) / len(y_wins[i]))
-            print("Hidden Unit:", h_units[i], "Avg Lose", sum(y_loses[i]) / len(y_loses[i]))
-            print("Hidden Unit:", h_units[i], "Avg Tie", sum(y_ties[i]) / len(y_ties[i]))
-            print("Hidden Unit:", h_units[i], "Avg Invalid", sum(y_invalids[i][3:]) / len(y_invalids[i][3:]))
-
-            print("Hidden Unit:", h_units[i], 'done')
-            print('================================================')
-
-        # part5d: First Move Distribution over Episodes
-        print("============Part5d============")
-        ep = x_episodes[2][-1]
-        load_weights(policy_c, ep)
-        print("Rates:", rate(env, policy_c, 1))
-
-        # part7 first move
-        print("============Part7============")
-        for episode in x_episodes[2]:
-            load_weights(policy_c, episode)
-            for i in range(9):
-                y_first_moves[i].append(first_move_distr(policy_c, env)[0][i])
-
-        plt.plot(x_episodes[2], y_first_moves[0], label=str(0))
-        plt.plot(x_episodes[2], y_first_moves[1], label=str(1))
-        plt.plot(x_episodes[2], y_first_moves[2], label=str(2))
-        plt.plot(x_episodes[2], y_first_moves[3], label=str(3))
-        plt.plot(x_episodes[2], y_first_moves[4], label=str(4))
-        plt.plot(x_episodes[2], y_first_moves[5], label=str(5))
-        plt.plot(x_episodes[2], y_first_moves[6], label=str(6))
-        plt.plot(x_episodes[2], y_first_moves[7], label=str(7))
-        plt.plot(x_episodes[2], y_first_moves[8], label=str(8))
-
-        plt.title('Hidden Unit: ' + str(h_units[2]))
-        plt.xlabel('Episode')
-        plt.ylabel("First Moves")
-        plt.legend()
-
-        plt.savefig("part7_" + str(h_units[2]) + ".jpg")
-        print("Part7 image saved")
-        plt.close()
-
-
+    if len(sys.argv) == 4:
+        if sys.argv[1]=='-l':
+            env = Environment()
+            policy = Policy(hidden_size=int(sys.argv[2]))
+            # `python tictactoe.py -l <hidden-units-size> <ep>` to print the first move distribution
+            ep = int(sys.argv[3])
+            load_weights(policy, ep)
+            print(first_move_distr(policy, env))
+            print(np.argmax(first_move_distr(policy, env)))
+            print("Rates:", rate(env, policy))
     else:
-        # `python tictactoe.py <ep>` to print the first move distribution
-        # using weightt checkpoint at episode int(<ep>)
-        ep = 130000  # int(sys.argv[1])
-        load_weights(policy, ep)
-        print(first_move_distr(policy, env))
-        print(np.argmax(first_move_distr(policy, env)))
-        print("Rates:", rate(env, policy))
+        # # `python tictactoe.py <hidden-units-size>` to train
+        env = Environment()
+        policy = Policy(hidden_size=int(sys.argv[1]))
+        train(policy, env)
+        plt.plot(episodes, avg_return, label="Episode VS Average Return")
+        plt.title('Hidden Unit: ' + sys.argv[1])
+        plt.xlabel('Episode')
+        plt.ylabel("Average Return")
+        plt.savefig("part5a-" + sys.argv[1] + ".jpg")
+        plt.close()
+        env.reset()
 
-        # Episode VS Win Lose Tie Rate
+        if sys.argv[1]=='128':
+
+            print("=============5c==============")
+            plt.plot(episodes, invalids, label="Invalid")
+            plt.title('Invalid move counts vs episode')
+            plt.xlabel('Episode')
+            plt.ylabel("Counts")
+            plt.legend()
+            plt.savefig("part5c" + ".jpg")
+            print("Part5c image saved")
+            plt.close()
+            env.reset()
+
+            print("=============5d==============")
+            win, lose, tie, invalid = rate(env, policy, flag=1)
+            print('win:', win)
+            print('lose:', lose)
+            print('tie:', tie)
+            env.reset()
+
+            print("=============6==============")
+            plt.plot(episodes, wins, label="Win")
+            plt.plot(episodes, loses, label="Lose")
+            plt.plot(episodes, ties, label="Tie")
+            plt.title('WIN/LOSE/TIE counts vs episodes')
+            plt.xlabel('Episode')
+            plt.ylabel("Counts")
+            plt.legend()
+            plt.savefig("part6" + ".jpg")
+            print("Part6 image saved")
+            plt.close()
+
+            print("=============7==============")
+            policy = Policy(hidden_size=int(sys.argv[1]))
+            episodes=list(range(1000,61000,1000))
+            episodes.insert(0,0)
+            for episode in range(1000,61000,1000):
+                load_weights(policy, episode)
+                for i in range(9):
+                    first_moves[i].append(first_moves[i][-1] + first_move_distr(policy, env)[0][i])
+            plt.plot(episodes, first_moves[0], label=str(0))
+            plt.plot(episodes, first_moves[1], label=str(1))
+            plt.plot(episodes, first_moves[2], label=str(2))
+            plt.plot(episodes, first_moves[3], label=str(3))
+            plt.plot(episodes, first_moves[4], label=str(4))
+            plt.plot(episodes, first_moves[5], label=str(5))
+            plt.plot(episodes, first_moves[6], label=str(6))
+            plt.plot(episodes, first_moves[7], label=str(7))
+            plt.plot(episodes, first_moves[8], label=str(8))
+
+            plt.title('Distribution changed over episodes(hidden:128 units)')
+            plt.xlabel('Episode')
+            plt.ylabel("First Moves Frequency")
+            plt.legend()
+
+            plt.savefig("part7" + ".jpg")
+            print("Part7 image saved")
+            plt.close()
+
